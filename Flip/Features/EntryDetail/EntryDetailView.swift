@@ -45,7 +45,7 @@ struct EntryDetailView: View {
                 .padding(.top, 16)
             }
         }
-        .navigationTitle("상세")
+//        .navigationTitle("상세")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
