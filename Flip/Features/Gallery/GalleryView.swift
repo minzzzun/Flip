@@ -11,11 +11,6 @@ import ComposableArchitecture
 struct GalleryView: View {
     @Bindable var store: StoreOf<GalleryFeature>
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-    ]
-
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
@@ -29,36 +24,27 @@ struct GalleryView: View {
                     )
                 }
 
-                ScrollView {
-                    if store.isLoading && store.entries.isEmpty {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, minHeight: 300)
-                    } else if store.entries.isEmpty {
-                        GalleryEmptyStateView()
-                    } else {
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(store.entries) { entry in
-                                EntryCardView(
-                                    memo: entry.memo,
-                                    onTap: {
-                                        store.send(.entryTapped(entry))
-                                    },
-                                    onDelete: {
-                                        store.send(.entryDeleteRequested(entry))
-                                    },
-                                    onMoveToFolder: {
-                                        store.send(.entryMoveToFolderRequested(entry))
-                                    },
-                                    loadThumbnail: { [thumbPath = entry.thumbPath, imagePath = entry.imagePath] in
-                                        @Dependency(\.imageStoreClient) var imageStoreClient
-                                        let path = thumbPath ?? imagePath
-                                        return try? await imageStoreClient.loadImage(path)
-                                    }
-                                )
+                if store.isLoading && store.entries.isEmpty {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 300)
+                } else if store.entries.isEmpty {
+                    GalleryEmptyStateView()
+                } else {
+                    GeometryReader { geometry in
+                        WaterfallCollectionView(
+                            entries: store.entries,
+                            numberOfColumns: WaterfallLayoutHelper.calculateNumberOfColumns(for: geometry.size.width),
+                            onTap: { entry in
+                                store.send(.entryTapped(entry))
+                            },
+                            onDelete: { entry in
+                                store.send(.entryDeleteRequested(entry))
+                            },
+                            onMoveToFolder: { entry in
+                                store.send(.entryMoveToFolderRequested(entry))
                             }
-                        }
+                        )
                         .padding(.horizontal, 12)
-                        .padding(.top, 8)
                         .padding(.bottom, 80)
                     }
                 }

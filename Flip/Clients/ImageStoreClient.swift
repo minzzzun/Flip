@@ -9,10 +9,18 @@ import UIKit
 import Dependencies
 
 struct ImageStoreClient {
-    var saveOriginal: @Sendable (_ image: UIImage) async throws -> String
-    var saveThumbnail: @Sendable (_ image: UIImage) async throws -> String
+    var saveOriginal: @Sendable (_ image: UIImage) async throws -> ImageSaveResult
+    var saveThumbnail: @Sendable (_ image: UIImage) async throws -> ImageSaveResult
     var loadImage: @Sendable (_ path: String) async throws -> UIImage
     var delete: @Sendable (_ path: String) async throws -> Void
+}
+
+// MARK: - ImageSaveResult
+
+struct ImageSaveResult: Sendable {
+    let filename: String
+    let width: Double
+    let height: Double
 }
 
 // MARK: - DependencyKey
@@ -28,7 +36,12 @@ extension ImageStoreClient: DependencyKey {
                 throw ImageStoreError.compressionFailed
             }
             try data.write(to: fileURL, options: .atomic)
-            return filename
+
+            return ImageSaveResult(
+                filename: filename,
+                width: Double(image.size.width),
+                height: Double(image.size.height)
+            )
         },
         saveThumbnail: { image in
             let directory = try Self.thumbnailsDirectory()
@@ -40,7 +53,12 @@ extension ImageStoreClient: DependencyKey {
                 throw ImageStoreError.compressionFailed
             }
             try data.write(to: fileURL, options: .atomic)
-            return filename
+
+            return ImageSaveResult(
+                filename: filename,
+                width: Double(resized.size.width),
+                height: Double(resized.size.height)
+            )
         },
         loadImage: { path in
             let fileURL = try Self.resolveURL(for: path)
@@ -59,8 +77,8 @@ extension ImageStoreClient: DependencyKey {
     )
 
     static let testValue = Self(
-        saveOriginal: { _ in "test_original.jpg" },
-        saveThumbnail: { _ in "test_thumb.jpg" },
+        saveOriginal: { _ in ImageSaveResult(filename: "test_original.jpg", width: 100, height: 100) },
+        saveThumbnail: { _ in ImageSaveResult(filename: "test_thumb.jpg", width: 100, height: 100) },
         loadImage: { _ in UIImage(systemName: "photo")! },
         delete: { _ in }
     )

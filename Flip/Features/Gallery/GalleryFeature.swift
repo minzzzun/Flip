@@ -67,6 +67,9 @@ struct GalleryFeature {
                 let folderId = state.selectedFolderId
                 return .merge(
                     .run { send in
+                        // 이미지 크기 마이그레이션 (한 번만 실행됨)
+                        try? await entryStoreClient.migrateImageDimensions()
+
                         let result = await Result {
                             if let folderId {
                                 return try await entryStoreClient.fetchByFolder(folderId)
