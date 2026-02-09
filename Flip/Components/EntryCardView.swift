@@ -35,14 +35,14 @@ struct EntryCardView: View {
             .clipped()
 
             // Memo preview
-            if !memo.isEmpty {
-                Text(memo)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-            }
+//            if !memo.isEmpty {
+//                Text(memo)
+//                    .font(.caption)
+//                    .foregroundStyle(.secondary)
+//                    .lineLimit(3)
+//                    .padding(.horizontal, 8)
+//                    .padding(.vertical, 6)
+//            }
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
