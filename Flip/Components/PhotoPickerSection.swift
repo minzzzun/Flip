@@ -12,6 +12,7 @@ struct PhotoPickerSection: View {
     let selectedImage: UIImage?
     let isLoading: Bool
     @Binding var photosPickerItem: PhotosPickerItem?
+    let onAlbumBrowse: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -28,21 +29,33 @@ struct PhotoPickerSection: View {
                     .overlay { ProgressView() }
             }
 
-            PhotosPicker(
-                selection: $photosPickerItem,
-                matching: .images,
-                photoLibrary: .shared()
-            ) {
-                Label(
-                    selectedImage == nil ? "사진 선택" : "사진 변경",
-                    systemImage: "photo.on.rectangle"
-                )
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.accentColor.opacity(0.1))
-                )
+            HStack(spacing: 12) {
+                PhotosPicker(
+                    selection: $photosPickerItem,
+                    matching: .images,
+                    photoLibrary: .shared()
+                ) {
+                    Label(
+                        selectedImage == nil ? "사진 선택" : "사진 변경",
+                        systemImage: "photo.on.rectangle"
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.accentColor.opacity(0.1))
+                    )
+                }
+
+                Button(action: onAlbumBrowse) {
+                    Label("앨범에서 선택", systemImage: "rectangle.stack")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.accentColor.opacity(0.1))
+                        )
+                }
             }
         }
     }

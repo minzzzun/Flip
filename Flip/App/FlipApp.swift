@@ -18,6 +18,7 @@ struct FlipApp: App {
     var body: some Scene {
         WindowGroup {
             AppView(store: FlipApp.store)
+                .preferredColorScheme(.dark)
         }
     }
 }

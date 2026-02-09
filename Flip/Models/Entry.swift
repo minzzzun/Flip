@@ -19,6 +19,7 @@ final class Entry {
     var imagePath: String
     var thumbPath: String?
     var title: String?
+    var folderId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -27,7 +28,8 @@ final class Entry {
         memo: String = "",
         imagePath: String,
         thumbPath: String? = nil,
-        title: String? = nil
+        title: String? = nil,
+        folderId: UUID? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -36,5 +38,6 @@ final class Entry {
         self.imagePath = imagePath
         self.thumbPath = thumbPath
         self.title = title
+        self.folderId = folderId
     }
 }

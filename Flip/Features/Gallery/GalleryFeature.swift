@@ -13,9 +13,13 @@ struct GalleryFeature {
     @ObservableState
     struct State {
         var entries: [EntryDTO] = []
+        var folders: [FolderDTO] = []
+        var selectedFolderId: UUID?
         var isLoading = false
 
         @Presents var addEntry: AddEntryFeature.State?
+        @Presents var folderManage: FolderManageFeature.State?
+        @Presents var folderPicker: FolderPickerFeature.State?
         @Presents var alert: AlertState<Action.Alert>?
 
         var entryToDelete: EntryDTO?
@@ -24,6 +28,17 @@ struct GalleryFeature {
     enum Action {
         case onAppear
         case entriesLoaded(Result<[EntryDTO], Error>)
+        case foldersLoaded(Result<[FolderDTO], Error>)
+
+        // Folder filter
+        case allFolderSelected
+        case folderSelected(UUID)
+        case manageFoldersButtonTapped
+        case folderManage(PresentationAction<FolderManageFeature.Action>)
+
+        // Folder move
+        case entryMoveToFolderRequested(EntryDTO)
+        case folderPicker(PresentationAction<FolderPickerFeature.Action>)
 
         // Navigation
         case addButtonTapped
@@ -42,18 +57,32 @@ struct GalleryFeature {
 
     @Dependency(\.entryStoreClient) var entryStoreClient
     @Dependency(\.imageStoreClient) var imageStoreClient
+    @Dependency(\.folderStoreClient) var folderStoreClient
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
             case .onAppear:
                 state.isLoading = true
-                return .run { send in
-                    let result = await Result {
-                        try await entryStoreClient.fetchAll()
+                let folderId = state.selectedFolderId
+                return .merge(
+                    .run { send in
+                        let result = await Result {
+                            if let folderId {
+                                return try await entryStoreClient.fetchByFolder(folderId)
+                            } else {
+                                return try await entryStoreClient.fetchAll()
+                            }
+                        }
+                        await send(.entriesLoaded(result))
+                    },
+                    .run { send in
+                        let result = await Result {
+                            try await folderStoreClient.fetchAll()
+                        }
+                        await send(.foldersLoaded(result))
                     }
-                    await send(.entriesLoaded(result))
-                }
+                )
 
             case let .entriesLoaded(.success(entries)):
                 state.entries = entries
@@ -64,18 +93,60 @@ struct GalleryFeature {
                 state.isLoading = false
                 return .none
 
+            case let .foldersLoaded(.success(folders)):
+                state.folders = folders
+                return .none
+
+            case .foldersLoaded(.failure):
+                return .none
+
+            // MARK: - Folder filter
+
+            case .allFolderSelected:
+                state.selectedFolderId = nil
+                return .send(.onAppear)
+
+            case let .folderSelected(folderId):
+                state.selectedFolderId = folderId
+                return .send(.onAppear)
+
+            case .manageFoldersButtonTapped:
+                state.folderManage = FolderManageFeature.State()
+                return .none
+
+            case .folderManage(.presented(.doneButtonTapped)):
+                state.folderManage = nil
+                // 폴더 관리 후 목록 갱신
+                return .send(.onAppear)
+
+            case .folderManage:
+                return .none
+
+            // MARK: - Folder move
+
+            case let .entryMoveToFolderRequested(entry):
+                state.folderPicker = FolderPickerFeature.State(
+                    entryId: entry.id,
+                    currentFolderId: entry.folderId
+                )
+                return .none
+
+            case .folderPicker(.presented(.moveDone)):
+                state.folderPicker = nil
+                return .send(.onAppear)
+
+            case .folderPicker:
+                return .none
+
+            // MARK: - Add
+
             case .addButtonTapped:
                 state.addEntry = AddEntryFeature.State()
                 return .none
 
             case .addEntry(.presented(.saveDone)):
                 state.addEntry = nil
-                return .run { send in
-                    let result = await Result {
-                        try await entryStoreClient.fetchAll()
-                    }
-                    await send(.entriesLoaded(result))
-                }
+                return .send(.onAppear)
 
             case .addEntry:
                 return .none
@@ -83,6 +154,8 @@ struct GalleryFeature {
             case let .entryTapped(entry):
                 // Handled by parent (AppFeature) for navigation
                 return .none
+
+            // MARK: - Delete
 
             case let .entryDeleteRequested(entry):
                 state.entryToDelete = entry
@@ -106,14 +179,18 @@ struct GalleryFeature {
                 let imagePath = entry.imagePath
                 let thumbPath = entry.thumbPath
                 state.entryToDelete = nil
-                return .run { send in
+                return .run { [selectedFolderId = state.selectedFolderId] send in
                     try await entryStoreClient.delete(id)
                     try? await imageStoreClient.delete(imagePath)
                     if let thumbPath {
                         try? await imageStoreClient.delete(thumbPath)
                     }
                     let result = await Result {
-                        try await entryStoreClient.fetchAll()
+                        if let selectedFolderId {
+                            return try await entryStoreClient.fetchByFolder(selectedFolderId)
+                        } else {
+                            return try await entryStoreClient.fetchAll()
+                        }
                     }
                     await send(.entriesLoaded(result))
                 }
@@ -125,6 +202,12 @@ struct GalleryFeature {
         }
         .ifLet(\.$addEntry, action: \.addEntry) {
             AddEntryFeature()
+        }
+        .ifLet(\.$folderManage, action: \.folderManage) {
+            FolderManageFeature()
+        }
+        .ifLet(\.$folderPicker, action: \.folderPicker) {
+            FolderPickerFeature()
         }
         .ifLet(\.$alert, action: \.alert)
     }

@@ -11,6 +11,7 @@ struct EntryCardView: View {
     let memo: String
     let onTap: () -> Void
     let onDelete: () -> Void
+    let onMoveToFolder: () -> Void
     let loadThumbnail: @Sendable () async -> UIImage?
 
     @State private var thumbnailImage: UIImage?
@@ -51,6 +52,11 @@ struct EntryCardView: View {
             onTap()
         }
         .contextMenu {
+            Button {
+                onMoveToFolder()
+            } label: {
+                Label("폴더 이동", systemImage: "folder")
+            }
             Button(role: .destructive) {
                 onDelete()
             } label: {

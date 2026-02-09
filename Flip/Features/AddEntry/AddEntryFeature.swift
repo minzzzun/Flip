@@ -21,6 +21,7 @@ struct AddEntryFeature {
         var isSaving = false
         var isLoadingPhoto = false
         @Presents var alert: AlertState<Action.Alert>?
+        @Presents var albumBrowser: AlbumListFeature.State?
     }
 
     enum Action: BindableAction {
@@ -29,6 +30,10 @@ struct AddEntryFeature {
         // Photo
         case photoPickerItemChanged(PhotosPickerItem?)
         case photoLoaded(Result<UIImage, Error>)
+
+        // Album Browser
+        case albumBrowseButtonTapped
+        case albumBrowser(PresentationAction<AlbumListFeature.Action>)
 
         // Save
         case saveButtonTapped
@@ -89,6 +94,19 @@ struct AddEntryFeature {
                 }
                 return .none
 
+            case .albumBrowseButtonTapped:
+                state.albumBrowser = AlbumListFeature.State()
+                return .none
+
+            case let .albumBrowser(.presented(.photoSelected(image))):
+                state.selectedImage = image
+                state.photosPickerItem = nil
+                state.albumBrowser = nil
+                return .none
+
+            case .albumBrowser:
+                return .none
+
             case .saveButtonTapped:
                 guard let image = state.selectedImage else { return .none }
                 state.isSaving = true
@@ -106,7 +124,8 @@ struct AddEntryFeature {
                             memo: memo,
                             imagePath: imagePath,
                             thumbPath: thumbPath,
-                            title: nil
+                            title: nil,
+                            folderId: nil
                         )
                         try await entryStoreClient.add(dto)
                     }
@@ -142,5 +161,8 @@ struct AddEntryFeature {
             }
         }
         .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$albumBrowser, action: \.albumBrowser) {
+            AlbumListFeature()
+        }
     }
 }

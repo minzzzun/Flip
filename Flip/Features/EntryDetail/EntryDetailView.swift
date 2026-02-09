@@ -48,11 +48,26 @@ struct EntryDetailView: View {
         .navigationTitle("상세")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .destructiveAction) {
-                Button(role: .destructive) {
-                    store.send(.deleteButtonTapped)
+            ToolbarItemGroup(placement: .primaryAction) {
+                Menu {
+                    Button {
+                        store.send(.editButtonTapped)
+                    } label: {
+                        Label("메모 수정", systemImage: "pencil")
+                    }
+                    Button {
+                        store.send(.moveToFolderButtonTapped)
+                    } label: {
+                        Label("폴더 이동", systemImage: "folder")
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        store.send(.deleteButtonTapped)
+                    } label: {
+                        Label("삭제", systemImage: "trash")
+                    }
                 } label: {
-                    Image(systemName: "trash")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -60,5 +75,15 @@ struct EntryDetailView: View {
             store.send(.onAppear)
         }
         .alert($store.scope(state: \.alert, action: \.alert))
+        .sheet(item: $store.scope(state: \.editMemo, action: \.editMemo)) { editStore in
+            NavigationStack {
+                EditMemoView(store: editStore)
+            }
+        }
+        .sheet(item: $store.scope(state: \.folderPicker, action: \.folderPicker)) { pickerStore in
+            NavigationStack {
+                FolderPickerView(store: pickerStore)
+            }
+        }
     }
 }

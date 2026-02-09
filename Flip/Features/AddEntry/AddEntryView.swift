@@ -18,7 +18,8 @@ struct AddEntryView: View {
                 PhotoPickerSection(
                     selectedImage: store.selectedImage,
                     isLoading: store.isLoadingPhoto,
-                    photosPickerItem: $store.photosPickerItem.sending(\.photoPickerItemChanged)
+                    photosPickerItem: $store.photosPickerItem.sending(\.photoPickerItemChanged),
+                    onAlbumBrowse: { store.send(.albumBrowseButtonTapped) }
                 )
 
                 MemoInputSection(
@@ -48,5 +49,8 @@ struct AddEntryView: View {
         }
         .interactiveDismissDisabled(store.isSaving)
         .alert($store.scope(state: \.alert, action: \.alert))
+        .sheet(item: $store.scope(state: \.albumBrowser, action: \.albumBrowser)) { albumStore in
+            AlbumListView(store: albumStore)
+        }
     }
 }

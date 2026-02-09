@@ -12,11 +12,13 @@ import ComposableArchitecture
 struct EntryDetailFeature {
     @ObservableState
     struct State: Equatable {
-        let entry: EntryDTO
+        var entry: EntryDTO
         var image: UIImage?
         var isFlipped = false
         var isLoadingImage = false
         @Presents var alert: AlertState<Action.Alert>?
+        @Presents var editMemo: EditMemoFeature.State?
+        @Presents var folderPicker: FolderPickerFeature.State?
     }
 
     enum Action {
@@ -24,6 +26,10 @@ struct EntryDetailFeature {
         case imageLoaded(Result<UIImage, Error>)
 
         case cardTapped
+        case editButtonTapped
+        case editMemo(PresentationAction<EditMemoFeature.Action>)
+        case moveToFolderButtonTapped
+        case folderPicker(PresentationAction<FolderPickerFeature.Action>)
         case deleteButtonTapped
         case alert(PresentationAction<Alert>)
         case deleteCompleted(Result<Void, Error>)
@@ -63,6 +69,35 @@ struct EntryDetailFeature {
 
             case .cardTapped:
                 state.isFlipped.toggle()
+                return .none
+
+            case .editButtonTapped:
+                state.editMemo = EditMemoFeature.State(
+                    entryId: state.entry.id,
+                    memo: state.entry.memo
+                )
+                return .none
+
+            case let .editMemo(.presented(.saveDone(updatedEntry))):
+                state.entry = updatedEntry
+                state.editMemo = nil
+                return .none
+
+            case .editMemo:
+                return .none
+
+            case .moveToFolderButtonTapped:
+                state.folderPicker = FolderPickerFeature.State(
+                    entryId: state.entry.id,
+                    currentFolderId: state.entry.folderId
+                )
+                return .none
+
+            case .folderPicker(.presented(.moveDone)):
+                state.folderPicker = nil
+                return .none
+
+            case .folderPicker:
                 return .none
 
             case .deleteButtonTapped:
@@ -117,5 +152,11 @@ struct EntryDetailFeature {
             }
         }
         .ifLet(\.$alert, action: \.alert)
+        .ifLet(\.$editMemo, action: \.editMemo) {
+            EditMemoFeature()
+        }
+        .ifLet(\.$folderPicker, action: \.folderPicker) {
+            FolderPickerFeature()
+        }
     }
 }
