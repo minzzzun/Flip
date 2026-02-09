@@ -22,6 +22,7 @@ struct GalleryView: View {
                         onSelectFolder: { id in store.send(.folderSelected(id)) },
                         onManageFolders: { store.send(.manageFoldersButtonTapped) }
                     )
+                    .padding(.bottom, 10)
                 }
 
                 if store.isLoading && store.entries.isEmpty {
