@@ -20,6 +20,8 @@ final class Entry {
     var thumbPath: String?
     var title: String?
     var folderId: UUID?
+    var imageWidth: Double?
+    var imageHeight: Double?
 
     init(
         id: UUID = UUID(),
@@ -29,7 +31,9 @@ final class Entry {
         imagePath: String,
         thumbPath: String? = nil,
         title: String? = nil,
-        folderId: UUID? = nil
+        folderId: UUID? = nil,
+        imageWidth: Double? = nil,
+        imageHeight: Double? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -39,5 +43,7 @@ final class Entry {
         self.thumbPath = thumbPath
         self.title = title
         self.folderId = folderId
+        self.imageWidth = imageWidth
+        self.imageHeight = imageHeight
     }
 }

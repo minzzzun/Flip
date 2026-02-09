@@ -114,18 +114,20 @@ struct AddEntryFeature {
                 let memo = state.memo
                 return .run { send in
                     let result = await Result<Void, Error> {
-                        let imagePath = try await imageStoreClient.saveOriginal(image)
-                        let thumbPath = try await imageStoreClient.saveThumbnail(image)
+                        let originalResult = try await imageStoreClient.saveOriginal(image)
+                        let thumbResult = try await imageStoreClient.saveThumbnail(image)
 
                         let dto = EntryDTO(
                             id: UUID(),
                             createdAt: .now,
                             updatedAt: .now,
                             memo: memo,
-                            imagePath: imagePath,
-                            thumbPath: thumbPath,
+                            imagePath: originalResult.filename,
+                            thumbPath: thumbResult.filename,
                             title: nil,
-                            folderId: nil
+                            folderId: nil,
+                            imageWidth: originalResult.width,
+                            imageHeight: originalResult.height
                         )
                         try await entryStoreClient.add(dto)
                     }
