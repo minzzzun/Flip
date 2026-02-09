@@ -30,18 +30,18 @@ struct FolderChipBar: View {
                         onTap: { onSelectFolder(folder.id) }
                     )
                 }
-
-                Button(action: onManageFolders) {
-                    Image(systemName: "gearshape")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                }
+//TODO: 나중에 삭제 
+//                Button(action: onManageFolders) {
+//                    Image(systemName: "gearshape")
+//                        .font(.caption)
+//                        .foregroundStyle(.secondary)
+//                        .padding(.horizontal, 10)
+//                        .padding(.vertical, 6)
+//                        .background(
+//                            Capsule()
+//                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+//                        )
+//                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 4)
