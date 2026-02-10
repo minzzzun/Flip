@@ -43,6 +43,7 @@ struct EntryDetailFeature {
 
     @Dependency(\.imageStoreClient) var imageStoreClient
     @Dependency(\.entryStoreClient) var entryStoreClient
+    @Dependency(\.hapticClient) var hapticClient
     @Dependency(\.dismiss) var dismiss
 
     var body: some Reducer<State, Action>  {
@@ -69,7 +70,9 @@ struct EntryDetailFeature {
 
             case .cardTapped:
                 state.isFlipped.toggle()
-                return .none
+                return .run { _ in
+                    hapticClient.impact(.light)
+                }
 
             case .editButtonTapped:
                 state.editMemo = EditMemoFeature.State(
