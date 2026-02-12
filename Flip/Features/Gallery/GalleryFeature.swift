@@ -144,7 +144,7 @@ struct GalleryFeature {
             // MARK: - Add
 
             case .addButtonTapped:
-                state.addEntry = AddEntryFeature.State()
+                state.addEntry = AddEntryFeature.State(folderId: state.selectedFolderId)
                 return .none
 
             case .addEntry(.presented(.saveDone)):
