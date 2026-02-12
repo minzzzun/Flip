@@ -15,6 +15,7 @@ import SwiftUI
 struct AddEntryFeature {
     @ObservableState
     struct State {
+        var folderId: UUID? = nil
         var selectedImage: UIImage?
         var photosPickerItem: PhotosPickerItem?
         var memo: String = ""
@@ -112,6 +113,7 @@ struct AddEntryFeature {
                 state.isSaving = true
 
                 let memo = state.memo
+                let folderId = state.folderId
                 return .run { send in
                     let result = await Result<Void, Error> {
                         let originalResult = try await imageStoreClient.saveOriginal(image)
@@ -125,7 +127,7 @@ struct AddEntryFeature {
                             imagePath: originalResult.filename,
                             thumbPath: thumbResult.filename,
                             title: nil,
-                            folderId: nil,
+                            folderId: folderId,
                             imageWidth: originalResult.width,
                             imageHeight: originalResult.height
                         )
