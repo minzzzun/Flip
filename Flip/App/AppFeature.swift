@@ -14,11 +14,20 @@ struct AppFeature {
     struct State {
         var gallery = GalleryFeature.State()
         var path = StackState<Path.State>()
+
+        @Presents var onboarding: OnboardingFeature.State?
+
+        init() {
+            let hasSeenOnboarding = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+            self.onboarding = hasSeenOnboarding ? nil : OnboardingFeature.State()
+        }
     }
 
     enum Action {
         case gallery(GalleryFeature.Action)
         case path(StackActionOf<Path>)
+        case onboarding(PresentationAction<OnboardingFeature.Action>)
+        case onboardingDismissed
     }
 
     @Reducer
@@ -43,8 +52,22 @@ struct AppFeature {
 
             case .gallery, .path:
                 return .none
+
+            case .onboarding(.presented(.delegate(.onboardingCompleted))):
+                state.onboarding = nil
+                return .none
+
+            case .onboarding:
+                return .none
+
+            case .onboardingDismissed:
+                state.onboarding = nil
+                return .none
             }
         }
         .forEach(\.path, action: \.path)
+        .ifLet(\.$onboarding, action: \.onboarding) {
+            OnboardingFeature()
+        }
     }
 }

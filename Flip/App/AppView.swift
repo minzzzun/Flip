@@ -20,5 +20,10 @@ struct AppView: View {
                 EntryDetailView(store: detailStore)
             }
         }
+        .fullScreenCover(
+            item: $store.scope(state: \.onboarding, action: \.onboarding)
+        ) { onboardingStore in
+            OnboardingView(store: onboardingStore)
+        }
     }
 }
