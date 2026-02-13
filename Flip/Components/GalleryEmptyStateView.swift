@@ -10,6 +10,7 @@ import SwiftUI
 struct GalleryEmptyStateView: View {
     var body: some View {
         VStack(spacing: 16) {
+            Spacer()
             Image(systemName: "photo.on.rectangle.angled")
                 .font(.system(size: 48))
                 .foregroundStyle(.tertiary)
@@ -19,6 +20,7 @@ struct GalleryEmptyStateView: View {
             Text("+ 버튼을 눌러 첫 번째 기록을 추가해보세요")
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
+            Spacer()
         }
         .frame(maxWidth: .infinity, minHeight: 400)
     }

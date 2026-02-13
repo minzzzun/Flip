@@ -88,9 +88,10 @@ actor FolderModelActor {
     }
 
     private func fetchMaxSortOrder() throws -> Int {
-        let descriptor = FetchDescriptor<Folder>(
+        var descriptor = FetchDescriptor<Folder>(
             sortBy: [SortDescriptor(\.sortOrder, order: .reverse)]
         )
+        descriptor.fetchLimit = 1   // 최상위 sortOrder 한 건만 가져옴
         let folders = try modelContext.fetch(descriptor)
         return folders.first?.sortOrder ?? 0
     }

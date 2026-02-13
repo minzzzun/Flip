@@ -27,6 +27,8 @@ struct GalleryFeature {
 
     enum Action {
         case onAppear
+        case refreshEntries       // Entry만 재조회 (폴더 선택/이동/추가 후)
+        case refreshFolders       // Folder만 재조회 (폴더 관리 후)
         case entriesLoaded(Result<[EntryDTO], Error>)
         case foldersLoaded(Result<[FolderDTO], Error>)
 
@@ -64,12 +66,14 @@ struct GalleryFeature {
             switch action {
             case .onAppear:
                 state.isLoading = true
+                // GalleryFeature에서 먼저 체크해 불필요한 actor 진입을 차단
+                let needsMigration = !UserDefaults.standard.bool(forKey: "didMigrateImageDimensions_v1")
                 let folderId = state.selectedFolderId
                 return .merge(
                     .run { send in
-                        // 이미지 크기 마이그레이션 (한 번만 실행됨)
-                        try? await entryStoreClient.migrateImageDimensions()
-
+                        if needsMigration {
+                            try? await entryStoreClient.migrateImageDimensions()
+                        }
                         let result = await Result {
                             if let folderId {
                                 return try await entryStoreClient.fetchByFolder(folderId)
@@ -86,6 +90,27 @@ struct GalleryFeature {
                         await send(.foldersLoaded(result))
                     }
                 )
+
+            case .refreshEntries:
+                let folderId = state.selectedFolderId
+                return .run { send in
+                    let result = await Result {
+                        if let folderId {
+                            return try await entryStoreClient.fetchByFolder(folderId)
+                        } else {
+                            return try await entryStoreClient.fetchAll()
+                        }
+                    }
+                    await send(.entriesLoaded(result))
+                }
+
+            case .refreshFolders:
+                return .run { send in
+                    let result = await Result {
+                        try await folderStoreClient.fetchAll()
+                    }
+                    await send(.foldersLoaded(result))
+                }
 
             case let .entriesLoaded(.success(entries)):
                 state.entries = entries
@@ -107,11 +132,11 @@ struct GalleryFeature {
 
             case .allFolderSelected:
                 state.selectedFolderId = nil
-                return .send(.onAppear)
+                return .send(.refreshEntries)
 
             case let .folderSelected(folderId):
                 state.selectedFolderId = folderId
-                return .send(.onAppear)
+                return .send(.refreshEntries)
 
             case .manageFoldersButtonTapped:
                 state.folderManage = FolderManageFeature.State()
@@ -119,8 +144,8 @@ struct GalleryFeature {
 
             case .folderManage(.presented(.doneButtonTapped)):
                 state.folderManage = nil
-                // 폴더 관리 후 목록 갱신
-                return .send(.onAppear)
+                // 폴더 관리 후 Entry + Folder 목록 갱신 (migration 제외)
+                return .merge(.send(.refreshEntries), .send(.refreshFolders))
 
             case .folderManage:
                 return .none
@@ -136,7 +161,7 @@ struct GalleryFeature {
 
             case .folderPicker(.presented(.moveDone)):
                 state.folderPicker = nil
-                return .send(.onAppear)
+                return .send(.refreshEntries)
 
             case .folderPicker:
                 return .none
@@ -149,7 +174,7 @@ struct GalleryFeature {
 
             case .addEntry(.presented(.saveDone)):
                 state.addEntry = nil
-                return .send(.onAppear)
+                return .send(.refreshEntries)
 
             case .addEntry:
                 return .none
