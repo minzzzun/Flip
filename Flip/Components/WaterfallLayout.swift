@@ -78,8 +78,8 @@ class WaterfallLayout: UICollectionViewLayout {
             contentHeight = max(contentHeight, frame.maxY)
             yOffset[column] = yOffset[column] + height
 
-            // 다음 아이템은 가장 짧은 컬럼에 배치
-            column = yOffset.firstIndex(of: yOffset.min() ?? 0) ?? 0
+            // 다음 아이템은 가장 짧은 컬럼에 배치 (enumerated min으로 탐색 1회 처리)
+            column = yOffset.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
         }
     }
 

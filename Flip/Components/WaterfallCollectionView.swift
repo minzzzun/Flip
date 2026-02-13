@@ -35,6 +35,9 @@ struct WaterfallCollectionView: UIViewRepresentable {
     }
 
     func updateUIView(_ collectionView: UICollectionView, context: Context) {
+        let oldIds = context.coordinator.entries.map(\.id)
+        let newIds = entries.map(\.id)
+
         context.coordinator.entries = entries
         context.coordinator.parent = self
 
@@ -43,7 +46,10 @@ struct WaterfallCollectionView: UIViewRepresentable {
             layout.configure(numberOfColumns: numberOfColumns, cellPadding: 6)
         }
 
-        collectionView.reloadData()
+        // 항목 목록이 실제로 바뀐 경우에만 전체 reloadData 수행
+        if newIds != oldIds {
+            collectionView.reloadData()
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -82,14 +88,16 @@ struct WaterfallCollectionView: UIViewRepresentable {
             if let cachedImage = imageCache[entry.id] {
                 cell.configure(with: cachedImage)
             } else {
-                // 비동기로 이미지 로드
+                // 비동기로 이미지 로드 (백그라운드에서 파일 I/O, UI만 메인 스레드에서 업데이트)
                 cell.configure(with: nil)
-                Task { @MainActor in
+                Task {
                     @Dependency(\.imageStoreClient) var imageStoreClient
                     if let image = try? await imageStoreClient.loadImage(entry.thumbPath ?? entry.imagePath) {
-                        self.imageCache[entry.id] = image
-                        if let currentCell = collectionView.cellForItem(at: indexPath) as? EntryCardCell {
-                            currentCell.configure(with: image)
+                        await MainActor.run {
+                            self.imageCache[entry.id] = image
+                            if let currentCell = collectionView.cellForItem(at: indexPath) as? EntryCardCell {
+                                currentCell.configure(with: image)
+                            }
                         }
                     }
                 }
